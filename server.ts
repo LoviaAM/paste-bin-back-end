@@ -27,16 +27,56 @@ const client = new Client(dbConfig);
 client.connect();
 
 app.get("/", async (req, res) => {
-  const dbres = await client.query('select * from categories');
+  const dbres = await client.query('select * from pastebin');
   res.json(dbres.rows);
 });
 
+// add user input 
+app.post("/input", async (req,res) => {
+  try {
+    const { title, description } = req.body;
+    const newPost = await client.query("INSERT INTO pastebin (post_description)(post_title) VALUES($1)($2)",
+    [description , title]);
+    res.json(newPost)
+  }
+  catch(err) {
+    console.log(err.message);
+  }
+});
 
+// Users should be able to see a list of recent posts, in reverse chronological order.
+app.get("/viewpost", async (req,res) => {
+  try {
+    const allPosts = await client.query("SELECT * FROM pastebin ORDER BY post_id DESC");
+    res.json(allPosts.rows)
+  }
+  catch(err){
+    console.log(err.message);
+  }
+});
+
+// get information on single post 
+app.get("/post/:id", async (req,res) => {
+  try {
+    const { id } = req.params;
+    const post = await client.query("SELECT * FROM pastebin where post_id = $1",
+    [id]);
+
+    res.json(post.rows[0]);
+    // returns first item for one post
+  }
+  catch(err) {
+    console.log(err.message);
+  }
+})
 //Start the server on the given port
-const port = process.env.PORT;
+const port = process.env.PORT ?? 4000;
 if (!port) {
   throw 'Missing PORT environment variable.  Set it in .env file.';
 }
 app.listen(port, () => {
   console.log(`Server is up and running on port ${port}`);
 });
+
+
+// Clicking on any post in the list should reveal the full relevant post in a large area to the side of the list.
