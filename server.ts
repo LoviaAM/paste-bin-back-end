@@ -23,7 +23,13 @@ const app = express();
 app.use(express.json()); //add body parser to each following route handler
 app.use(cors()) //add CORS support to each following route handler
 
-const client = new Client(dbConfig);
+const client = new Client({
+  user : "academy",
+  password: "",
+  host : "localhost",
+  port : 5432,
+  database : "pastebin",
+}); // define the client config
 client.connect();
 
 app.get("/", async (req, res) => {
@@ -35,7 +41,7 @@ app.get("/", async (req, res) => {
 app.post("/input", async (req,res) => {
   try {
     const { title, description } = req.body;
-    const newPost = await client.query("INSERT INTO pastebin (post_description)(post_title) VALUES($1)($2)",
+    const newPost = await client.query('INSERT INTO pastebin (post_description)(post_title) VALUES($1)($2)',
     [description , title]);
     res.json(newPost)
   }
@@ -47,7 +53,7 @@ app.post("/input", async (req,res) => {
 // Users should be able to see a list of recent posts, in reverse chronological order.
 app.get("/viewpost", async (req,res) => {
   try {
-    const allPosts = await client.query("SELECT * FROM pastebin ORDER BY post_id DESC");
+    const allPosts = await client.query('SELECT * FROM pastebin ORDER BY post_id DESC');
     res.json(allPosts.rows)
   }
   catch(err){
@@ -59,7 +65,7 @@ app.get("/viewpost", async (req,res) => {
 app.get("/post/:id", async (req,res) => {
   try {
     const { id } = req.params;
-    const post = await client.query("SELECT * FROM pastebin where post_id = $1",
+    const post = await client.query('SELECT * FROM pastebin where post_id = $1',
     [id]);
 
     res.json(post.rows[0]);
@@ -69,8 +75,37 @@ app.get("/post/:id", async (req,res) => {
     console.log(err.message);
   }
 })
+
+// allows user to delete post
+app.delete("/post/:id", async (req,res) =>{
+  try{
+    const { id } = req.params;
+    const deleteTodo = await client.query('delete from pastebin where post_id = $1', 
+    [id])
+    res.json("post was deleted")
+  } 
+  catch (err) {
+    console.log(err.message);
+  }
+})
+
+// allow  user to edit the post
+app.put("/post/:id", async (req,res) => {
+  try{
+    const { id } = req.params;
+    const {description} = req.body
+    const deleteTodo = await client.query('update pastebin set post_description = $1 where post_id = $2', 
+    [description, id])
+    res.json("post was edited")
+  } 
+  catch (err) {
+    console.log(err.message);
+  }
+})
+
+
 //Start the server on the given port
-const port = process.env.PORT ?? 4000;
+const port = process.env.PORT;
 if (!port) {
   throw 'Missing PORT environment variable.  Set it in .env file.';
 }
