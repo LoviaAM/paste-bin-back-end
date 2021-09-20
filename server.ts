@@ -11,8 +11,8 @@ config(); //Read .env file lines as though they were env vars.
 //For the ssl property of the DB connection config, use a value of...
 // false - when connecting to a local DB
 // { rejectUnauthorized: false } - when connecting to a heroku DB
-const herokuSSLSetting = { rejectUnauthorized: false }
-const sslSetting = process.env.LOCAL ? false : herokuSSLSetting
+const herokuSSLSetting = { rejectUnauthorized: false };
+const sslSetting = process.env.LOCAL ? false : herokuSSLSetting;
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
   ssl: sslSetting,
@@ -21,97 +21,102 @@ const dbConfig = {
 const app = express();
 
 app.use(express.json()); //add body parser to each following route handler
-app.use(cors()) //add CORS support to each following route handler
+app.use(cors()); //add CORS support to each following route handler
 
 const client = new Client({
-  user : "academy",
+  user: "academy",
   password: "",
-  host : "localhost",
-  port : 5432,
-  database : "pastebin",
+  host: "localhost",
+  port: 5432,
+  database: "pastebin",
 }); // define the client config
 client.connect();
 
 app.get("/", async (req, res) => {
-  const dbres = await client.query('select * from pastebin');
+  const dbres = await client.query("select * from pastebin");
   res.json(dbres.rows);
 });
 
-// add user input 
-app.post("/input", async (req,res) => {
+// add user input
+app.post("/input", async (req, res) => {
   try {
     const { title, description } = req.body;
-    const newPost = await client.query('INSERT INTO pastebin (post_description)(post_title) VALUES($1)($2)',
-    [description , title]);
-    res.json(newPost)
-  }
-  catch(err) {
+    const newPost = await client.query(
+      "INSERT INTO pastebin (post_description , post_title) VALUES($1 , $2)",
+      [description, title]
+    );
+    res.json(newPost);
+  } catch (err) {
     console.log(err.message);
   }
 });
 
 // Users should be able to see a list of recent posts, in reverse chronological order.
-app.get("/viewpost", async (req,res) => {
+app.get("/viewpost", async (req, res) => {
   try {
-    const allPosts = await client.query('SELECT * FROM pastebin ORDER BY post_id DESC');
-    res.json(allPosts.rows)
-  }
-  catch(err){
+    const allPosts = await client.query(
+      "SELECT * FROM pastebin ORDER BY post_id DESC"
+    );
+    res.json(allPosts.rows);
+  } catch (err) {
     console.log(err.message);
   }
 });
 
-// get information on single post 
-app.get("/post/:id", async (req,res) => {
+// get information on single post
+app.get("/post/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const post = await client.query('SELECT * FROM pastebin where post_id = $1',
-    [id]);
+    const { id } = req.params; // req.params An object containing parameter values parsed from the URL path.
+    const post = await client.query(
+      "SELECT * FROM pastebin where post_id = $1",
+      [id]
+    );
 
     res.json(post.rows[0]);
     // returns first item for one post
-  }
-  catch(err) {
+  } catch (err) {
     console.log(err.message);
   }
-})
+});
 
 // allows user to delete post
-app.delete("/post/:id", async (req,res) =>{
-  try{
+app.delete("/post/:id", async (req, res) => {
+  try {
     const { id } = req.params;
-    const deleteTodo = await client.query('delete from pastebin where post_id = $1', 
-    [id])
-    res.json("post was deleted")
-  } 
-  catch (err) {
+    const deleteTodo = await client.query(
+      "delete from pastebin where post_id = $1",
+      [id]
+    );
+    res.json("post was deleted");
+  } catch (err) {
     console.log(err.message);
   }
-})
+});
 
 // allow  user to edit the post
-app.put("/post/:id", async (req,res) => {
-  try{
+app.put("/post/:id", async (req, res) => {
+  try {
     const { id } = req.params;
-    const {description} = req.body
-    const deleteTodo = await client.query('update pastebin set post_description = $1 where post_id = $2', 
-    [description, id])
-    res.json("post was edited")
-  } 
-  catch (err) {
+    const { description } = req.body;
+    const editTodo = await client.query(
+      "update pastebin set post_description = $1 where post_id = $2",
+      [description, id]
+    );
+    res.json("post was edited");
+  } catch (err) {
     console.log(err.message);
   }
-})
-
+});
 
 //Start the server on the given port
 const port = process.env.PORT;
 if (!port) {
-  throw 'Missing PORT environment variable.  Set it in .env file.';
+  throw "Missing PORT environment variable.  Set it in .env file.";
 }
 app.listen(port, () => {
   console.log(`Server is up and running on port ${port}`);
 });
 
-
 // Clicking on any post in the list should reveal the full relevant post in a large area to the side of the list.
+
+//
